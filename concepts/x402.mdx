@@ -69,17 +69,15 @@ The API server verifies this on-chain before serving the response.
 | Solana (USDC) | Live |
 | Ethereum (USDC) | Coming soon |
 
-## x402 service registry
+## Float-native services
 
-Float maintains a registry of x402-compatible services your agents can discover at runtime using the [`find_service`](/mcp/tools#find_service) MCP tool. The registry includes:
+Beyond x402, Float also provides its own built-in services — like image generation — that agents can access directly without needing a third-party API key. Use [`list_models`](/mcp/tools#list_models) to see what's available:
 
-- Float-native services (image generation, AI models)
-- Third-party APIs that have adopted x402
-
-To find what's available:
 ```
-find_service({ query: "weather data" })
+What image generation models does Float have?
 ```
+
+See the [Image Generation guide](/guides/image-generation) for a full walkthrough.
 
 ## Further reading
 

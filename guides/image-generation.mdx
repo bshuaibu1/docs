@@ -1,0 +1,203 @@
+---
+title: Image Generation
+description: Generate images directly through Float. Your agent pays from its wallet — no external API keys needed.
+---
+
+## Overview
+
+Float includes a built-in image generation API. Your agents can generate images and pay for them automatically from their USDC wallet — no third-party accounts, no API keys, no manual billing.
+
+Just prompt. Pay. Get the image.
+
+## How it works
+
+1. Your agent calls `list_models` to see what's available
+2. It picks a model and posts a generation request
+3. Float charges the agent's wallet and kicks off the job
+4. Your agent polls until the image is ready, then gets the URL
+
+All of this happens inside a single Claude session. No human intervention required.
+
+---
+
+## Step 1 — List available models
+
+Ask your agent to list what's available:
+
+```
+What image generation models does Float have?
+```
+
+The agent calls `list_models` and returns the current model roster with pricing:
+
+```json
+{
+  "models": [
+    {
+      "id": "nano-banana-pro",
+      "displayName": "Nano Banana Pro",
+      "description": "Photorealistic image generation. Best quality.",
+      "cost1k": "0.14",
+      "cost2k": "0.17",
+      "cost4k": "0.17"
+    },
+    {
+      "id": "nano-banana-2",
+      "displayName": "Nano Banana 2",
+      "description": "Fast image generation with strong text rendering.",
+      "cost1k": "0.06",
+      "cost2k": "0.08",
+      "cost4k": "0.11"
+    }
+  ]
+}
+```
+
+**Cost is in USDC per image.** `1K`, `2K`, and `4K` refer to output resolution.
+
+---
+
+## Step 2 — Pick an agent with balance
+
+Your agent needs USDC to pay for the generation. Check which agents have funds:
+
+```
+Which of my agents has USDC to spend?
+```
+
+The agent calls `get_agents` and shows balances. If an agent is low, top it up:
+
+```
+Allocate 1 USDC to my research agent
+```
+
+---
+
+## Step 3 — Generate the image
+
+Ask your agent to generate:
+
+```
+Use Float to generate a photorealistic image of a mountain at sunrise, landscape, high quality
+```
+
+The agent will:
+1. Select a model based on your request
+2. Call `POST /v1/agents/{agentId}/generate` with your prompt
+3. Pay from the agent's wallet automatically
+4. Poll for the result every few seconds
+5. Return the image URL when ready
+
+**Example prompt tips:**
+- Be descriptive — "a man in a red coat standing on a cliff at dusk, cinematic lighting" generates better than "man on cliff"
+- Specify style — photorealistic, illustrated, cinematic, minimal, etc.
+- Mention aspect ratio if you have a preference — square, landscape, or portrait
+
+---
+
+## Resolution options
+
+| Resolution | Label | Best for |
+|-----------|-------|----------|
+| Standard | `1K` | Quick drafts, previews, social posts |
+| High | `2K` | Web use, presentations, marketing |
+| Highest | `4K` | Print, hero images, detailed artwork |
+
+---
+
+## Aspect ratio options
+
+| Ratio | Use case |
+|-------|----------|
+| `1:1` | Square — profile photos, social posts |
+| `16:9` | Landscape — headers, banners, desktop wallpapers |
+| `9:16` | Portrait — mobile, stories, posters |
+
+---
+
+## Pricing
+
+| Model | 1K | 2K | 4K |
+|-------|-----|-----|-----|
+| Nano Banana Pro | $0.14 | $0.17 | $0.17 |
+| Nano Banana 2 | $0.06 | $0.08 | $0.11 |
+
+Charges are deducted from the agent's USDC wallet at the moment the job is submitted. If the agent doesn't have enough balance, the request will fail with a clear error. Use [`allocate_budget`](/mcp/tools#allocate_budget) to top up before generating.
+
+---
+
+## Direct API usage
+
+If you're calling the Float API directly (not through MCP), the flow is:
+
+### Submit a generation job
+
+```bash
+POST /v1/agents/{agentId}/generate?owner={ownerWallet}
+Authorization: Bearer {ownerControlKey}
+Content-Type: application/json
+
+{
+  "model": "nano-banana-pro",
+  "prompt": "a man with a sword in his hands, dramatic lighting, cinematic",
+  "aspectRatio": "1:1",
+  "resolution": "1K"
+}
+```
+
+**Response:**
+```json
+{
+  "taskId": "858e1d6b-3fa2-452f-b606-3f1d4358e5aa",
+  "status": "pending",
+  "estimatedCost": "0.14",
+  "model": "nano-banana-pro"
+}
+```
+
+### Poll for the result
+
+```bash
+GET /v1/agents/{agentId}/tasks/{taskId}?owner={ownerWallet}
+Authorization: Bearer {ownerControlKey}
+```
+
+Poll every 5–10 seconds until `status` is `"complete"`:
+
+```json
+{
+  "taskId": "858e1d6b-3fa2-452f-b606-3f1d4358e5aa",
+  "status": "complete",
+  "resultUrl": "https://...",
+  "costUsdc": "0.14",
+  "prompt": "a man with a sword in his hands, dramatic lighting, cinematic"
+}
+```
+
+Once `status === "complete"`, the `resultUrl` contains your image. Download or display it directly — the URL is temporary.
+
+<Note>
+Image URLs expire after a short period. Download the image to permanent storage if you need it long-term.
+</Note>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Payment failed: not enough USDC">
+    The agent's wallet doesn't have enough USDC for the generation. Use `allocate_budget` to move funds from your treasury into the agent's wallet, then retry.
+  </Accordion>
+
+  <Accordion title="Payment failed: agent wallet needs SOL">
+    First-time use requires a small SOL deposit to cover Solana network fees (~0.003 SOL). This is a one-time cost per agent wallet. Send the required SOL to the wallet address shown in the error, then retry. Subsequent generations don't require this.
+  </Accordion>
+
+  <Accordion title="Model not available">
+    The model ID doesn't match any enabled model. Call `list_models` to get the current list of valid model IDs and try again.
+  </Accordion>
+
+  <Accordion title="Status stays 'processing' for a long time">
+    Generation typically takes 15–60 seconds depending on resolution and model. If status hasn't changed after 2 minutes, the job may have failed on the backend. Contact support with your `taskId`.
+  </Accordion>
+</AccordionGroup>
