@@ -1,0 +1,133 @@
+---
+title: Services API
+description: Discover paid APIs available through Float's service registry.
+---
+
+## Search services
+
+Find available services by capability. This is what the `find_service` MCP tool calls internally.
+
+```http
+GET /v1/services/search?q=<query>
+```
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `q` | string | What you're looking for — e.g. `image generation`, `weather`, `twitter` |
+
+**Response:**
+
+```json
+{
+  "query": "image generation",
+  "results": [
+    {
+      "id": "float-image-gen",
+      "name": "Float Image Generation",
+      "description": "Gemini Pro Image via Float. Photorealistic, supports 1K, 2K, and 4K resolution.",
+      "category": "image",
+      "pricing": {
+        "1k": "0.14",
+        "2k": "0.17",
+        "4k": "0.17"
+      },
+      "endpoint": "POST /v1/agents/{agentId}/generate",
+      "source": "float-native"
+    }
+  ],
+  "total": 1
+}
+```
+
+**Sources:**
+
+| Source | Description |
+|--------|-------------|
+| `float-native` | Services hosted directly by Float |
+| `model-registry` | AI models available in the Float model registry |
+| `x402-marketplace` | Third-party APIs in the x402 ecosystem |
+
+---
+
+## List available AI models
+
+Returns all enabled AI models with pricing. Powered by the Float model registry.
+
+```http
+GET /v1/models
+```
+
+**Response:**
+
+```json
+{
+  "models": [
+    {
+      "id": "nano-banana-pro",
+      "displayName": "Gemini Pro Image",
+      "provider": "kie",
+      "description": "Photorealistic image generation powered by Gemini Pro Image.",
+      "pricing": {
+        "1k": "0.14",
+        "2k": "0.17",
+        "4k": "0.17"
+      },
+      "enabled": true
+    }
+  ]
+}
+```
+
+---
+
+## Image generation
+
+Generate an image using a Float-managed AI model. Float charges your agent's wallet and proxies the request to the underlying provider.
+
+```http
+POST /v1/agents/:agentId/generate?owner=<wallet>
+```
+
+**Body:**
+
+```json
+{
+  "prompt": "A photorealistic image of a futuristic city at dawn",
+  "modelId": "nano-banana-pro",
+  "resolution": "1k"
+}
+```
+
+**Response:**
+
+```json
+{
+  "taskId": "task_xyz789",
+  "status": "queued",
+  "estimatedCost": "0.14"
+}
+```
+
+Generation is asynchronous. Poll the task endpoint until `status` is `success` or `failed`.
+
+### Poll task status
+
+```http
+GET /v1/agents/:agentId/tasks/:taskId?owner=<wallet>
+```
+
+**Response (success):**
+
+```json
+{
+  "taskId": "task_xyz789",
+  "status": "success",
+  "resultUrl": "https://cdn.kie.ai/results/...",
+  "cost": "0.14",
+  "currency": "USDC"
+}
+```
+
+**Task states:** `queued` → `generating` → `success` / `failed`

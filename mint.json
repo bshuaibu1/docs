@@ -1,0 +1,92 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Float",
+  "logo": {
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png",
+    "href": "https://usefloat.xyz"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#346538",
+    "light": "#4a8f50",
+    "dark": "#2a5230",
+    "background": {
+      "light": "#FBFBFA",
+      "dark": "#111111"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://app.usefloat.xyz"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get started",
+    "url": "https://app.usefloat.xyz"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Dashboard",
+      "icon": "gauge",
+      "url": "https://app.usefloat.xyz"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/usefloat"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "setup/for-humans",
+        "setup/for-agents"
+      ]
+    },
+    {
+      "group": "MCP Server",
+      "pages": [
+        "mcp/overview",
+        "mcp/tools"
+      ]
+    },
+    {
+      "group": "Concepts",
+      "pages": [
+        "concepts/x402",
+        "concepts/treasury",
+        "concepts/agent-wallets"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/overview",
+        "api-reference/agents",
+        "api-reference/payments",
+        "api-reference/services"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "x": "https://x.com/usefloatxyz",
+    "github": "https://github.com/usefloat"
+  },
+  "api": {
+    "baseUrl": "https://api.usefloat.xyz",
+    "auth": {
+      "method": "bearer"
+    }
+  }
+}

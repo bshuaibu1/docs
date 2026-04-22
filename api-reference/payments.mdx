@@ -1,0 +1,101 @@
+---
+title: Payments API
+description: Make payments and query payment history.
+---
+
+## Make a payment
+
+Charge an agent's wallet for an API call. This is the core x402 payment endpoint — Float's SDK and MCP server call this automatically.
+
+```http
+POST /v1/agents/:agentId/pay?owner=<wallet>
+```
+
+**Body:**
+
+```json
+{
+  "service": "float-image-gen",
+  "amount": "0.14",
+  "currency": "USDC",
+  "description": "1K image generation"
+}
+```
+
+**Response:**
+
+```json
+{
+  "paymentId": "pay_abc123",
+  "txSignature": "5Kj...mP",
+  "amount": "0.14",
+  "currency": "USDC",
+  "status": "confirmed",
+  "timestamp": "2026-04-22T10:30:00Z",
+  "xPaymentHeader": "v1.<base64-receipt>"
+}
+```
+
+The `xPaymentHeader` value should be attached as `X-Payment` on the subsequent request to the service API.
+
+**Policy enforcement:** Float will return `402` if the payment would:
+- Exceed the agent's `maxPerPayment` limit
+- Push the agent over its `dailyBudget`
+- Violate the `cooldownSeconds` window
+- Target a service not in `allowedServices` (if that list is non-empty)
+
+---
+
+## Dashboard data
+
+Returns all data needed for the dashboard overview — treasury balance, agents, and recent activity.
+
+```http
+GET /v1/dashboard?owner=<wallet>
+```
+
+**Response:**
+
+```json
+{
+  "treasury": {
+    "walletAddress": "UXeH32...VL",
+    "amount": "248500000",
+    "currency": "USDC",
+    "decimals": 6
+  },
+  "agents": [
+    {
+      "agentId": "my-agent",
+      "walletAddress": "8mK...pQ2",
+      "createdAt": "2026-04-01T...",
+      "lifetimeSpent": "12.45",
+      "lifetimePayments": 89,
+      "policy": {
+        "dailyBudget": "25.00"
+      }
+    }
+  ],
+  "recentActivity": [
+    {
+      "id": "pay_abc123",
+      "agent": "my-agent",
+      "venue": "Float Image Generation",
+      "amount": "0.14",
+      "rail": "sol",
+      "time": "10:30",
+      "status": "approved"
+    }
+  ]
+}
+```
+
+---
+
+## Treasury deposits
+
+Returns the deposit history for the owner's treasury wallet.
+
+```http
+GET /v1/treasury/deposits?owner=<wallet>
+```

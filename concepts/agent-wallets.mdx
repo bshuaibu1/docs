@@ -1,0 +1,77 @@
+---
+title: Agent Wallets
+description: Every agent gets a Solana wallet managed by Float. No key management, no seed phrases — agents just spend.
+---
+
+## What is an agent wallet?
+
+An agent wallet is a server-managed Solana account provisioned by Float when you run `npx @usefloat/cli@latest init`. It holds USDC and makes payments on behalf of your agent without exposing a private key to the agent's context.
+
+```
+Float (server) holds the private key
+        ↓
+    signs transactions on behalf of the agent
+        ↓
+agent calls paid API → payment broadcasts to Solana
+```
+
+Your agent never sees its own private key. Float signs everything server-side using secure MPC (multi-party computation) infrastructure.
+
+## Provisioning
+
+Agent wallets are created automatically during `float init`. You don't need to:
+
+- Generate a keypair
+- Fund it with SOL (Float covers rent)
+- Import it into a wallet app
+- Manage seed phrases
+
+You get a wallet address. That's it.
+
+## Key properties
+
+| Property | Value |
+|----------|-------|
+| Network | Solana mainnet |
+| Token | USDC (SPL token) |
+| Key custody | Float server (MPC) |
+| Minimum balance | No minimum |
+| SOL for gas | Covered by Float |
+
+## What agents can do
+
+An agent with an active Float wallet can:
+
+- **Pay for services** — any x402-compatible API, automatically
+- **Check its own balance** — before taking on expensive tasks
+- **Read its policy** — to know its daily budget and limits
+- **Report spend history** — so you can see what it spent money on
+
+An agent **cannot**:
+
+- Transfer USDC to arbitrary addresses
+- Change its own policy without owner approval
+- Exceed its daily budget or per-payment limit
+- Access funds from another agent's wallet
+
+## Viewing wallet details
+
+```bash
+# CLI
+npx @usefloat/cli@latest status
+
+# Dashboard
+# → https://app.usefloat.xyz/agents
+```
+
+The Agents page shows each agent's wallet address, current balance, and lifetime spend.
+
+## Security model
+
+Float uses server-managed wallets (similar to Dynamic or Privy's embedded wallets) rather than requiring users to manage private keys. This is intentional:
+
+- **No key exposure** — private keys never appear in the agent's context window
+- **Spending limits are enforced server-side** — an agent can't overspend even if it tries
+- **On-chain payments are verifiable** — every transaction has a Solana signature you can verify independently
+
+If you want to withdraw remaining USDC from an agent wallet, you can do so from the Settings page in the dashboard.

@@ -1,0 +1,87 @@
+---
+title: x402 Protocol
+description: The HTTP payment standard that lets AI agents pay for APIs automatically, without human intervention.
+---
+
+## What is x402?
+
+x402 is an open HTTP payment protocol. When a server needs payment before serving a request, it returns an HTTP `402 Payment Required` response with machine-readable payment instructions. The client pays, then resubmits the request with a payment receipt.
+
+Float uses x402 as the payment rail for all agent-to-API transactions.
+
+```
+agent → GET /api/data
+          ← 402 Payment Required
+             { "amount": "0.05", "currency": "USDC", "recipient": "SolAddress..." }
+
+agent → pays 0.05 USDC on Solana
+agent → GET /api/data
+         X-Payment: <receipt>
+          ← 200 OK + data
+```
+
+Everything happens automatically. The agent never stops to ask you for approval.
+
+## Why x402?
+
+Traditional API access requires:
+1. Create an account on the provider's site
+2. Generate an API key
+3. Add the key to your environment
+4. Hope your agent doesn't leak it
+
+x402 replaces all of that with a single USDC payment. No accounts, no keys, no paywalls.
+
+For AI agents specifically, x402 is the correct abstraction — agents understand money better than they understand authentication flows.
+
+## How Float implements x402
+
+Float wraps x402 in a higher-level abstraction so your agents don't need to implement the protocol themselves:
+
+1. **Probe** — the agent calls a Float-registered service endpoint
+2. **402 received** — Float intercepts the 402 response
+3. **Payment** — Float deducts from the agent's wallet and broadcasts a Solana transaction
+4. **Resubmit** — Float attaches the `X-Payment` header and resubmits the request
+5. **Done** — the agent receives the `200 OK` response as if nothing happened
+
+Your agent writes one line. Float handles the rest.
+
+## The `X-Payment` header
+
+After payment, Float attaches a signed receipt in the `X-Payment` header:
+
+```
+X-Payment: v1.<base64-encoded-receipt>
+```
+
+The receipt contains:
+- Transaction signature (Solana)
+- Amount and currency
+- Timestamp
+- Recipient address
+
+The API server verifies this on-chain before serving the response.
+
+## Supported payment rails
+
+| Rail | Status |
+|------|--------|
+| Solana (USDC) | Live |
+| Ethereum (USDC) | Coming soon |
+
+## x402 service registry
+
+Float maintains a registry of x402-compatible services your agents can discover at runtime using the [`find_service`](/mcp/tools#find_service) MCP tool. The registry includes:
+
+- Float-native services (image generation, AI models)
+- Third-party APIs that have adopted x402
+
+To find what's available:
+```
+find_service({ query: "weather data" })
+```
+
+## Further reading
+
+- [x402 specification](https://x402.org)
+- [Float service registry](/api-reference/services)

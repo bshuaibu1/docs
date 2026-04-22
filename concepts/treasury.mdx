@@ -1,0 +1,70 @@
+---
+title: The Treasury Model
+description: One USDC balance. Many agents. Each agent draws from a shared treasury with individual spending limits.
+---
+
+## Overview
+
+Float uses a two-layer wallet model: a **treasury** (your main balance) and individual **agent wallets** (one per agent). You load USDC once into the treasury. Agents draw from it automatically based on their spending policies.
+
+```
+You → load USDC → Treasury wallet
+                       │
+              ┌────────┼────────┐
+              ↓        ↓        ↓
+         Agent A    Agent B   Agent C
+         $5/day     $25/day   $10/day
+```
+
+## The treasury wallet
+
+The treasury wallet is a Solana account linked to your owner identity (your Google, Apple, email, or wallet sign-in). It holds your USDC balance and acts as the funding source for all your agents.
+
+You can view your treasury address in the [Float dashboard](https://app.usefloat.xyz) or by running:
+
+```bash
+npx @usefloat/cli@latest status
+```
+
+## Agent wallets
+
+Each agent has its own Solana wallet, automatically provisioned when you run `npx @usefloat/cli@latest init`. The agent wallet:
+
+- Has its own on-chain address
+- Holds a portion of your USDC (allocated from the treasury)
+- Pays for services directly — the treasury is not touched per payment
+
+This means you can give different agents different budgets and track their spending independently in the [Payments](https://app.usefloat.xyz/payments) view.
+
+## Spending policies
+
+Every agent has a policy that governs how much it can spend:
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `dailyBudget` | Max USDC the agent can spend in 24 hours | $50 |
+| `maxPerPayment` | Max USDC for a single payment | $5 |
+| `cooldownSeconds` | Minimum seconds between payments | 0 |
+| `allowedServices` | Whitelist of service IDs (empty = all) | All |
+
+Set policies from the [Policies page](https://app.usefloat.xyz/policies) or via the `set_policy` MCP tool.
+
+## How funds move
+
+```
+1. You deposit USDC → Treasury (on-chain deposit)
+2. Treasury → Agent wallet (allocate_budget or auto-allocation on init)
+3. Agent wallet → Service provider (x402 payment on every API call)
+```
+
+Steps 2 and 3 happen automatically. You only interact with Step 1 (loading USDC).
+
+## Monitoring
+
+Every USDC movement is visible in the Float dashboard:
+
+- **Overview** — total balance, all-agents spend, budget utilisation
+- **Agents** — per-agent balance and lifetime spend
+- **Payments** — every individual transaction with status
+
+No surprise charges. No hidden fees. Every payment is on-chain and verifiable.

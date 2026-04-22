@@ -1,0 +1,89 @@
+---
+title: Float MCP Overview
+description: The Float MCP server gives your AI agents native Float tools inside Claude Code, Cursor, and Codex. No API keys, no manual setup — just call the tools.
+---
+
+## What is the Float MCP?
+
+The Float MCP (Model Context Protocol) server is an npm package that runs locally on your machine and exposes Float capabilities as native tools inside your AI agent's environment.
+
+When Float MCP is active, your agent can:
+
+- Check its treasury balance before taking on paid work
+- Find which services are available and what they cost
+- Deploy new sub-agents from inside a task
+- Set and read spending policies
+- View payment history
+
+All of this happens natively — no context switching, no copy-pasting API keys, no leaving the terminal.
+
+## Installation
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add float -- npx -y @usefloat/mcp@latest
+    ```
+    Restart Claude Code. Float tools will be available in all future sessions.
+  </Tab>
+  <Tab title="Cursor">
+    Add to `.cursor/mcp.json` in your project root (or `~/.cursor/mcp.json` globally):
+    ```json
+    {
+      "mcpServers": {
+        "float": {
+          "command": "npx",
+          "args": ["-y", "@usefloat/mcp@latest"]
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Codex">
+    Add to the MCP servers config in Codex settings:
+    ```json
+    {
+      "float": {
+        "command": "npx",
+        "args": ["-y", "@usefloat/mcp@latest"]
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## How it connects
+
+The MCP server reads your agent credentials from `~/.float/config.json` (written by `npx @usefloat/cli@latest init`). It uses your `apiKey` to authenticate with the Float API at `https://api.usefloat.xyz`.
+
+```
+Claude Code
+    ↓
+Float MCP server (local, npx)
+    ↓
+Float API (api.usefloat.xyz)
+    ↓
+Solana on-chain payments
+```
+
+No credentials are ever exposed to the agent's context window. The MCP server holds them, not the LLM.
+
+## First use
+
+After installing, start a Claude Code session and try:
+
+```
+What's my Float balance?
+```
+
+Claude will call the `check_balance` tool and respond with your current USDC balance, agent ID, and wallet address.
+
+```
+Find me an image generation API I can use
+```
+
+Claude will call `find_service` and return available services with pricing, letting your agent decide whether to proceed.
+
+## Tool list
+
+See the [MCP Tools reference](/mcp/tools) for the full list of available tools, their parameters, and example outputs.

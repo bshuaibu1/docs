@@ -1,0 +1,93 @@
+---
+title: Setup — For Humans
+description: The easiest way to set up Float is to let your AI agent do it. Copy the prompt below and paste it into Claude Code, Cursor, or Codex.
+---
+
+## What you'll need
+
+Before you start, have these ready:
+
+- **Claude Code, Cursor, or Codex** — the agent runs the entire setup for you
+- **A sign-in method** — Google, Apple, email, or a Solana wallet (Phantom / Solflare)
+- **Node.js 18+** — required to run the Float CLI
+- **Some USDC** — deposit via card on the Fund page; fiat on-ramp is built in
+
+## Get started
+
+Copy the prompt below and paste it directly into your AI agent. It will handle everything — checking prerequisites, installing the MCP server, linking your machine, and opening the browser for sign-in.
+
+<Tip>
+Works best with Claude Code. Cursor and Codex both work but may require slightly different MCP config paths (the agent will handle this automatically).
+</Tip>
+
+```text Agent setup prompt — copy and paste into Claude Code / Cursor / Codex
+Set up Float on this machine so my agents can pay for APIs automatically.
+
+Float is a Solana-native treasury. I load USDC once, and all my agents draw
+from it using x402 — no more paywalls mid-task.
+
+Do not wait for me to run commands. Execute each step directly, only asking
+when you need credentials I haven't provided.
+
+Step 1 — Check Node.js
+  node --version
+If Node.js 18 or higher is not installed, install it: https://nodejs.org
+
+Step 2 — Add Float MCP to Claude Code
+  claude mcp add float -- npx -y @usefloat/mcp@latest
+This registers Float as an MCP server so you can call Float tools natively
+in future sessions.
+
+If the above fails, add this manually to ~/.claude.json under "mcpServers":
+  {
+    "float": {
+      "command": "npx",
+      "args": ["-y", "@usefloat/mcp@latest"]
+    }
+  }
+
+Step 3 — Link this machine to Float
+  npx @usefloat/cli@latest init
+This opens the browser to Float's link page. Sign in with Google, Apple,
+email, or a Solana wallet (Phantom/Solflare). Once signed in, your agent
+is linked and a treasury wallet is created automatically.
+
+Step 4 — Confirm the link
+  npx @usefloat/cli@latest status
+You should see your agent ID, wallet address, and current balance.
+
+Step 5 — Load USDC
+Open https://app.usefloat.xyz/fund in your browser and deposit USDC into
+the treasury. You only do this once — all agents draw from this single
+balance automatically.
+
+Step 6 — Test
+In a new Claude Code session with Float MCP active, ask:
+  "Check my Float balance"
+
+Let me know the agent ID, wallet address, and balance when complete.
+```
+
+## What the agent will do
+
+<Steps>
+  <Step title="Check Node.js">
+    Verifies Node.js 18+ and npx are available. If Node.js is missing, it will prompt you to install it and give you the link.
+  </Step>
+  <Step title="Install Float MCP">
+    Runs `claude mcp add float -- npx -y @usefloat/mcp@latest` to register Float as a native MCP server in Claude Code. For Cursor and Codex, it writes the equivalent JSON config.
+  </Step>
+  <Step title="Link your machine">
+    Runs `npx @usefloat/cli@latest init`, which opens your browser to the Float link page. Sign in once — the agent waits for you and continues automatically.
+  </Step>
+  <Step title="Confirm and report back">
+    Runs `npx @usefloat/cli@latest status` and reports your agent ID, wallet address, and current balance.
+  </Step>
+  <Step title="Open the fund page">
+    Opens [app.usefloat.xyz/fund](https://app.usefloat.xyz/fund) so you can deposit USDC. This is the only manual step.
+  </Step>
+</Steps>
+
+## Already set up?
+
+If Float is already installed and you just need to top up, go directly to the [Fund page](https://app.usefloat.xyz/fund). No re-linking required.

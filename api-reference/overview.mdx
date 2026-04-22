@@ -1,0 +1,66 @@
+---
+title: API Overview
+description: The Float REST API. All requests go to api.usefloat.xyz.
+---
+
+## Base URL
+
+```
+https://api.usefloat.xyz
+```
+
+## Authentication
+
+Most endpoints require your owner wallet address as a query parameter. The Float MCP handles this automatically — you only need to authenticate manually if you're calling the API directly.
+
+```
+GET /v1/dashboard?owner=<wallet-address>
+```
+
+Agent-specific endpoints also require your agent's API key as a Bearer token:
+
+```
+Authorization: Bearer float_sk_...
+```
+
+Your API key is written to `~/.float/config.json` after running `npx @usefloat/cli@latest init`.
+
+## Response format
+
+All responses are JSON. Errors follow this shape:
+
+```json
+{
+  "error": "Human-readable error message"
+}
+```
+
+HTTP status codes:
+
+| Code | Meaning |
+|------|---------|
+| 200 | Success |
+| 400 | Bad request — check your parameters |
+| 401 | Unauthorized — missing or invalid API key |
+| 402 | Payment required (x402) |
+| 404 | Resource not found |
+| 409 | Conflict — e.g. agent ID already exists |
+| 500 | Internal server error |
+
+## Rate limits
+
+The Float API does not currently enforce rate limits, but this will change as the platform scales. Be reasonable with polling intervals — use the `status` endpoint with a 2-second interval maximum during link session polling.
+
+## Endpoint groups
+
+<CardGroup cols={2}>
+  <Card title="Agents" icon="robot" href="/api-reference/agents">
+    Provision, configure, and manage agents and their wallets.
+  </Card>
+  <Card title="Payments" icon="credit-card" href="/api-reference/payments">
+    Initiate payments and query payment history.
+  </Card>
+  <Card title="Services" icon="search" href="/api-reference/services">
+    Discover available paid APIs in Float's service registry.
+  </Card>
+</CardGroup>

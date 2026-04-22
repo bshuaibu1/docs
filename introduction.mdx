@@ -1,0 +1,62 @@
+---
+title: Introduction
+description: Float gives AI agents their own treasury. Load USDC once, let your agents pay for everything automatically.
+---
+
+## What is Float?
+
+Float is a Solana-native treasury for AI agents. You load USDC once — Float gives each of your agents a wallet, spending limits, and x402 payment rails. When an agent needs to call a paid API, it pays automatically, without stopping to ask.
+
+No API key juggling. No paywalls mid-task. No manual wallet management.
+
+```
+you → load USDC → Float treasury
+                     ↓
+              agent gets a wallet + budget
+                     ↓
+    agent calls paid API → x402 payment → done
+```
+
+## Who is it for?
+
+Float is built for **vibe coders** — people running Claude Code, Codex, or Cursor all day, building with AI agents that need to call real APIs, generate images, and access live data.
+
+Without Float: your agents hit a paywall, stop, and wait for you to intervene.  
+With Float: they keep going.
+
+## How it works
+
+<Steps>
+  <Step title="Install the Float MCP">
+    Add Float to Claude Code in one command. Your agent can now call Float tools natively.
+    ```bash
+    claude mcp add float -- npx -y @usefloat/mcp@latest
+    ```
+  </Step>
+  <Step title="Link your machine">
+    Run `npx @usefloat/cli@latest init` to sign in and link your agent. Float provisions a Solana wallet automatically.
+  </Step>
+  <Step title="Load USDC">
+    Open the [Float dashboard](https://app.usefloat.xyz/fund) and deposit USDC. Fiat on-ramp (card → USDC) is built in.
+  </Step>
+  <Step title="Let agents run">
+    Your agents can now pay for any x402-compatible API automatically, within the spending limits you set.
+  </Step>
+</Steps>
+
+## Key concepts
+
+<CardGroup cols={2}>
+  <Card title="x402 Protocol" icon="bolt" href="/concepts/x402">
+    The HTTP payment standard Float uses. Agents probe, pay, and resubmit — all automatically.
+  </Card>
+  <Card title="Treasury model" icon="wallet" href="/concepts/treasury">
+    One USDC balance, many agents. Each agent has its own wallet and daily budget drawn from your treasury.
+  </Card>
+  <Card title="Float MCP" icon="plug" href="/mcp/overview">
+    Native tools for Claude Code, Cursor, and Codex. Agents call Float without leaving the terminal.
+  </Card>
+  <Card title="Agent wallets" icon="key" href="/concepts/agent-wallets">
+    Server-managed Solana wallets. No key management required — Float handles signing.
+  </Card>
+</CardGroup>

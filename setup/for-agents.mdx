@@ -1,0 +1,222 @@
+---
+title: Setup — For Agents
+description: Step-by-step playbook for AI agents to install and configure Float. Every step is CLI-executable. Human intervention is called out explicitly.
+---
+
+## Float on your machine — Agent Playbook
+
+Step-by-step guide for AI agents to install and configure Float. The goal is to complete setup with as little human involvement as possible.
+
+<Note>
+You, the agent, should check and install prerequisites on behalf of the user. Do not wait — start immediately. Only ask for credentials the user must provide themselves (e.g. a key from their browser).
+</Note>
+
+## Requirements
+
+Check these before starting. Install or create anything that's missing.
+
+- Node.js 18+ and npx on the local machine
+- Claude Code, Cursor, or Codex as the host environment
+- Internet access to install npm packages
+- A browser the user can interact with for the sign-in step (you can open it for them)
+
+---
+
+## Step 01 — Verify prerequisites
+
+```bash
+node --version
+npx --version
+```
+
+If Node.js is below 18 or not installed, open the download page:
+
+```bash
+# macOS / Linux
+open https://nodejs.org
+
+# Or direct the user to: https://nodejs.org/en/download
+```
+
+---
+
+## Step 02 — Add Float MCP to Claude Code
+
+Register Float as an MCP server so the user's agent can call Float tools natively in all future Claude Code sessions.
+
+<CodeGroup>
+```bash Via Claude Code CLI (preferred)
+claude mcp add float -- npx -y @usefloat/mcp@latest
+```
+
+```json Via ~/.claude.json (fallback)
+{
+  "mcpServers": {
+    "float": {
+      "command": "npx",
+      "args": ["-y", "@usefloat/mcp@latest"]
+    }
+  }
+}
+```
+
+```json Via .cursor/mcp.json (Cursor)
+{
+  "mcpServers": {
+    "float": {
+      "command": "npx",
+      "args": ["-y", "@usefloat/mcp@latest"]
+    }
+  }
+}
+```
+</CodeGroup>
+
+<Note>
+For Cursor: write to `.cursor/mcp.json` in the project root or `~/.cursor/mcp.json` globally. For Codex: write to the MCP config in the Codex settings directory.
+</Note>
+
+---
+
+## Step 03 — Link this machine to Float
+
+Run the Float CLI init command. It will open the user's browser to the Float link page. The user signs in once (Google, Apple, email, or wallet) — the rest is automatic.
+
+```bash
+npx @usefloat/cli@latest init
+```
+
+**What happens:**
+1. CLI generates a one-time link token and calls `POST /v1/link-sessions` on the Float API
+2. The browser opens to `https://app.usefloat.xyz/link?token=<token>`
+3. User signs in via Privy (Google, Apple, email, Phantom, or Solflare)
+4. Float provisions a Solana wallet for the agent and links it to the owner identity
+5. CLI polls until the session completes, then writes `~/.float/config.json`
+
+**`~/.float/config.json` after a successful link:**
+```json
+{
+  "agentId": "your-agent-id",
+  "walletAddress": "SolanaWalletAddress...",
+  "apiKey": "float_sk_...",
+  "linkedAt": "2026-04-22T..."
+}
+```
+
+<Warning>
+This is a **human step** — the user must interact with the browser for the sign-in. Open the browser for them, then wait for the CLI to print "Linked." before proceeding.
+</Warning>
+
+---
+
+## Step 04 — Confirm the link
+
+```bash
+npx @usefloat/cli@latest status
+```
+
+Expected output:
+```
+Agent:   your-agent-id
+Wallet:  SolanaWalletAddress...
+Balance: 0.00 USDC
+API:     https://api.usefloat.xyz ✓
+```
+
+If balance is 0, proceed to Step 05. The link is successful regardless of balance.
+
+---
+
+## Step 05 — Load USDC into the treasury
+
+Open the Float fund page in the user's browser. This is a **human step** — the user must complete the deposit.
+
+```bash
+# macOS
+open https://app.usefloat.xyz/fund
+
+# Linux
+xdg-open https://app.usefloat.xyz/fund
+```
+
+Tell the user:
+- Fiat on-ramp (credit card → USDC) is available on this page
+- Recommended starting deposit: $10–$25 USDC
+- They only need to do this once — all agents share this treasury balance
+
+---
+
+## Step 06 — Test the integration
+
+Start a new Claude Code session with Float MCP active and verify end-to-end:
+
+```bash
+claude
+```
+
+Then, as that agent, call:
+
+```
+Check my Float balance
+```
+
+Float MCP will call `check_balance` and return the current USDC balance, agent ID, and wallet address. If this works, setup is complete.
+
+---
+
+## Step 07 — Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="MCP not found after install">
+    Restart Claude Code to pick up the new MCP registration. Verify with:
+    ```bash
+    claude mcp list
+    ```
+    Float should appear in the list. If not, check `~/.claude.json` for the `mcpServers.float` entry.
+  </Accordion>
+
+  <Accordion title="Init fails or browser doesn't open">
+    Re-run with debug output:
+    ```bash
+    npx @usefloat/cli@latest init --debug
+    ```
+    Or open the link page manually — the token is printed in the error output:
+    ```bash
+    open https://app.usefloat.xyz/link?token=<token>
+    ```
+  </Accordion>
+
+  <Accordion title="Wrong agent shows in status">
+    Clear the local config and re-link:
+    ```bash
+    rm ~/.float/config.json
+    npx @usefloat/cli@latest init
+    ```
+  </Accordion>
+
+  <Accordion title="Balance shows 0 after deposit">
+    USDC deposits can take 30–60 seconds to appear on-chain. Wait, then re-check:
+    ```bash
+    npx @usefloat/cli@latest status
+    ```
+  </Accordion>
+
+  <Accordion title="Check active config">
+    ```bash
+    cat ~/.float/config.json
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Quick reference
+
+| Task | Command |
+|------|---------|
+| Check Float status | `npx @usefloat/cli@latest status` |
+| Re-link / reset agent | `rm ~/.float/config.json && npx @usefloat/cli@latest init` |
+| List MCP tools in Claude Code | `claude mcp list` |
+| Update Float MCP | `npx -y @usefloat/mcp@latest` |
+| View local Float config | `cat ~/.float/config.json` |
+| Load USDC | `open https://app.usefloat.xyz/fund` |

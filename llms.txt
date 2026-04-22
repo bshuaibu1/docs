@@ -1,0 +1,63 @@
+# Float — AI Agent Treasury on Solana
+# Docs index for AI agents: https://usefloat.xyz/docs/llms.txt
+
+Float is a Solana-native treasury for AI agents. Agents load USDC once and
+pay for APIs automatically using x402 — no paywalls, no manual key management.
+
+## Install (Claude Code)
+  claude mcp add float -- npx -y @usefloat/mcp@latest
+
+## Link this machine
+  npx @usefloat/cli@latest init
+  # Opens browser for Privy sign-in (Google, Apple, email, Phantom, Solflare)
+  # Writes ~/.float/config.json with agentId, walletAddress, apiKey
+
+## Check status
+  npx @usefloat/cli@latest status
+
+## MCP tools (available after install + link)
+  check_balance           — get USDC balance and agent info
+  find_service(query)     — search Float's service registry
+  get_policy              — read spending limits
+  set_policy(params)      — update daily budget, max per payment, cooldowns
+  get_spend_history       — list recent payments
+  allocate_budget(amount) — move USDC from treasury to agent wallet
+  deploy_agent(id, opts)  — provision a new sub-agent
+  kill_agent(id)          — suspend an agent (no spending)
+  resume_agent(id)        — re-activate a suspended agent
+  rename_agent(id, name)  — change display name
+  list_models             — list AI models with pricing
+
+## API base URL
+  https://api.usefloat.xyz
+
+## Key endpoints
+  GET  /v1/dashboard?owner=<wallet>
+  POST /v1/agents/deploy?owner=<wallet>
+  GET  /v1/agents/:id/balance?owner=<wallet>
+  GET  /v1/agents/:id/policy?owner=<wallet>
+  POST /v1/agents/:id/policy?owner=<wallet>
+  POST /v1/agents/:id/pay?owner=<wallet>
+  GET  /v1/agents/:id/spend-history?owner=<wallet>
+  POST /v1/agents/:id/allocate?owner=<wallet>
+  POST /v1/agents/:id/kill?owner=<wallet>
+  POST /v1/agents/:id/resume?owner=<wallet>
+  POST /v1/agents/:id/generate?owner=<wallet>  (image generation)
+  GET  /v1/services/search?q=<query>
+  GET  /v1/models
+  POST /v1/link-sessions
+  GET  /v1/link-sessions/:token
+
+## Payment flow (x402)
+  agent → GET /service
+       ← 402 { amount, currency, recipient }
+  Float pays on-chain → attaches X-Payment header → resubmits
+       ← 200 + data
+
+## Docs
+  Full docs:      https://usefloat.xyz/docs
+  Setup (humans): https://usefloat.xyz/docs/setup/for-humans
+  Setup (agents): https://usefloat.xyz/docs/setup/for-agents
+  MCP tools:      https://usefloat.xyz/docs/mcp/tools
+  x402 concept:   https://usefloat.xyz/docs/concepts/x402
+  Dashboard:      https://app.usefloat.xyz

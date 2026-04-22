@@ -1,0 +1,98 @@
+---
+title: Quickstart
+description: Get Float running in under 5 minutes.
+---
+
+## Prerequisites
+
+- Node.js 18 or higher ([download](https://nodejs.org))
+- Claude Code, Cursor, or Codex
+- A Google, Apple, email, or Solana wallet (Phantom / Solflare)
+
+Verify Node.js is ready:
+
+```bash
+node --version  # should print v18.x or higher
+```
+
+## Step 1 — Install the Float MCP
+
+Register Float as an MCP server so your agents can call Float tools natively inside Claude Code:
+
+```bash
+claude mcp add float -- npx -y @usefloat/mcp@latest
+```
+
+<Accordion title="Using Cursor or Codex instead?">
+Add the following to `.cursor/mcp.json` (Cursor) or your IDE's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "float": {
+      "command": "npx",
+      "args": ["-y", "@usefloat/mcp@latest"]
+    }
+  }
+}
+```
+</Accordion>
+
+## Step 2 — Link your machine
+
+Run the Float CLI to link this machine to your Float account:
+
+```bash
+npx @usefloat/cli@latest init
+```
+
+This opens your browser to the Float link page. Sign in with Google, Apple, email, or a Solana wallet. After sign-in, Float:
+
+- Creates an agent wallet on Solana
+- Writes `~/.float/config.json` with your agent credentials
+- Prints your agent ID and wallet address
+
+Confirm the link worked:
+
+```bash
+npx @usefloat/cli@latest status
+```
+
+Expected output: your agent ID, Solana wallet address, and current balance.
+
+## Step 3 — Load USDC
+
+Go to [app.usefloat.xyz/fund](https://app.usefloat.xyz/fund) and deposit USDC into your treasury. You only do this once — all your agents draw from this shared balance automatically.
+
+<Note>
+Fiat on-ramp (credit card → USDC) is available on the fund page via Privy. Minimum recommended deposit: $10 to start.
+</Note>
+
+## Step 4 — Test it
+
+Start a new Claude Code session (Float MCP must be active):
+
+```bash
+claude
+```
+
+Then ask:
+
+```
+Check my Float balance
+```
+
+Float will respond with your balance, agent ID, and a list of available paid services your agent can call.
+
+## You're done
+
+Your agent can now pay for any x402-compatible API automatically — without stopping, without hitting a paywall, without asking you for a key.
+
+<CardGroup cols={2}>
+  <Card title="MCP tools reference" icon="plug" href="/mcp/tools">
+    See every tool available to your agent via Float MCP.
+  </Card>
+  <Card title="Set spending limits" icon="shield" href="https://app.usefloat.xyz/policies">
+    Configure daily budgets and per-payment limits in the dashboard.
+  </Card>
+</CardGroup>

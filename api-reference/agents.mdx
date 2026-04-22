@@ -1,0 +1,221 @@
+---
+title: Agents API
+description: Provision and manage agents, wallets, and spending policies.
+---
+
+## Deploy an agent
+
+Create a new agent with a server-managed Solana wallet.
+
+```http
+POST /v1/agents/deploy?owner=<wallet>
+```
+
+**Body:**
+
+```json
+{
+  "agentId": "my-agent",
+  "dailyBudget": "25.00",
+  "maxPerPayment": "2.00"
+}
+```
+
+**Response:**
+
+```json
+{
+  "agent": {
+    "agentId": "my-agent",
+    "walletAddress": "8mK...pQ2",
+    "createdAt": "2026-04-22T10:00:00Z"
+  },
+  "mcpConfig": {
+    "command": "npx",
+    "args": ["-y", "@usefloat/mcp@latest"]
+  }
+}
+```
+
+Returns `409 Conflict` if an agent with the same ID already exists for this owner.
+
+---
+
+## Get agent balance
+
+```http
+GET /v1/agents/:agentId/balance?owner=<wallet>
+```
+
+**Response:**
+
+```json
+{
+  "agentId": "my-agent",
+  "walletAddress": "8mK...pQ2",
+  "balance": "18.42",
+  "currency": "USDC"
+}
+```
+
+---
+
+## Get agent policy
+
+```http
+GET /v1/agents/:agentId/policy?owner=<wallet>
+```
+
+**Response:**
+
+```json
+{
+  "agentId": "my-agent",
+  "policy": {
+    "dailyBudget": "25.00",
+    "maxPerPayment": "2.00",
+    "cooldownSeconds": 0,
+    "allowedServices": []
+  }
+}
+```
+
+---
+
+## Update agent policy
+
+```http
+POST /v1/agents/:agentId/policy?owner=<wallet>
+```
+
+**Body** (all fields optional — only sent fields are updated):
+
+```json
+{
+  "dailyBudget": "50.00",
+  "maxPerPayment": "5.00",
+  "cooldownSeconds": 60,
+  "allowedServices": ["float-image-gen"]
+}
+```
+
+---
+
+## Allocate budget
+
+Move USDC from the treasury into an agent's wallet.
+
+```http
+POST /v1/agents/:agentId/allocate?owner=<wallet>
+```
+
+**Body:**
+
+```json
+{
+  "amount": "10.00"
+}
+```
+
+---
+
+## Kill an agent
+
+Suspend an agent. All payments will be blocked. Wallet and balance are preserved.
+
+```http
+POST /v1/agents/:agentId/kill?owner=<wallet>
+```
+
+---
+
+## Resume an agent
+
+Re-activate a suspended agent.
+
+```http
+POST /v1/agents/:agentId/resume?owner=<wallet>
+```
+
+---
+
+## Rename an agent
+
+Change an agent's display name.
+
+```http
+POST /v1/agents/:agentId/rename?owner=<wallet>
+```
+
+**Body:**
+
+```json
+{
+  "displayName": "Research Bot"
+}
+```
+
+---
+
+## Get spend history
+
+List recent payments made by this agent.
+
+```http
+GET /v1/agents/:agentId/spend-history?owner=<wallet>&limit=20
+```
+
+**Response:**
+
+```json
+{
+  "payments": [
+    {
+      "id": "pay_abc123",
+      "service": "Float Image Generation",
+      "amount": "0.14",
+      "currency": "USDC",
+      "status": "confirmed",
+      "timestamp": "2026-04-22T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Link sessions
+
+Link sessions are how the Float CLI connects a local machine to a Float owner account.
+
+### Create a link session
+
+```http
+POST /v1/link-sessions
+```
+
+**Response:**
+
+```json
+{
+  "token": "lnk_...",
+  "linkUrl": "https://app.usefloat.xyz/link?token=lnk_...",
+  "expiresAt": "2026-04-22T10:15:00Z"
+}
+```
+
+### Get session status
+
+```http
+GET /v1/link-sessions/:token
+```
+
+Poll this endpoint every 2 seconds to detect when the user has completed sign-in.
+
+### Complete a session
+
+Called by the Float dashboard after the user signs in.
+
+```http
+POST /v1/link-sessions/:token/complete
+```

@@ -1,0 +1,267 @@
+---
+title: MCP Tools Reference
+description: Every tool the Float MCP server exposes to your agent, with parameters and example outputs.
+---
+
+## Tool index
+
+| Tool | What it does |
+|------|-------------|
+| [`check_balance`](#check_balance) | Get current USDC balance and agent info |
+| [`find_service`](#find_service) | Search Float's service registry for a paid API |
+| [`get_policy`](#get_policy) | Read the current spending policy for this agent |
+| [`set_policy`](#set_policy) | Update daily budget or per-payment limits |
+| [`get_spend_history`](#get_spend_history) | List recent payments made by this agent |
+| [`allocate_budget`](#allocate_budget) | Move USDC from treasury into agent's wallet |
+| [`deploy_agent`](#deploy_agent) | Provision a new sub-agent with its own wallet |
+| [`kill_agent`](#kill_agent) | Suspend an agent (stops all spending) |
+| [`resume_agent`](#resume_agent) | Re-activate a suspended agent |
+| [`rename_agent`](#rename_agent) | Change an agent's display name |
+| [`list_models`](#list_models) | List available AI models with pricing |
+
+---
+
+## check_balance
+
+Returns the current USDC balance, agent ID, and wallet address for this agent.
+
+**When to call:** Before taking on any paid work. Agents should check balance first and bail gracefully if funds are insufficient.
+
+**Parameters:** None
+
+**Example output:**
+```json
+{
+  "agentId": "codex-main",
+  "walletAddress": "TyAyd71...Wj",
+  "balance": "24.85",
+  "currency": "USDC",
+  "treasuryAddress": "UXeH32...VL"
+}
+```
+
+---
+
+## find_service
+
+Search Float's service registry to discover what paid APIs are available and what they cost. **Call this before telling a user a service isn't available** — Float may have it.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `query` | string | What you're looking for — e.g. `"image generation"`, `"weather data"`, `"twitter search"` |
+
+**Example:**
+```
+find_service({ query: "generate an image" })
+```
+
+**Example output:**
+```json
+{
+  "results": [
+    {
+      "id": "float-image-gen",
+      "name": "Float Image Generation",
+      "description": "Gemini Pro Image via Float. Photorealistic, 1K–4K resolution.",
+      "pricing": {
+        "1k": "$0.14",
+        "2k": "$0.17",
+        "4k": "$0.17"
+      },
+      "how": "Call POST /v1/agents/{agentId}/generate with your prompt and resolution."
+    }
+  ],
+  "message": "1 service found. Use the Float API directly — no additional setup required."
+}
+```
+
+If no service is found in Float's registry, `find_service` will note that and suggest checking the x402 marketplace.
+
+---
+
+## get_policy
+
+Read the current spending policy for this agent — daily budget, per-payment limit, cooldown, and allowed services.
+
+**Parameters:** None
+
+**Example output:**
+```json
+{
+  "agentId": "codex-main",
+  "policy": {
+    "dailyBudget": "50.00",
+    "maxPerPayment": "5.00",
+    "cooldownSeconds": 0,
+    "allowedServices": []
+  }
+}
+```
+
+`allowedServices: []` means all services are allowed. Populate it to whitelist specific services only.
+
+---
+
+## set_policy
+
+Update the spending policy for this agent.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `dailyBudget` | string | Maximum USDC the agent can spend in 24 hours |
+| `maxPerPayment` | string | Maximum USDC per individual payment |
+| `cooldownSeconds` | number | Minimum seconds between payments (0 = no limit) |
+| `allowedServices` | string[] | Whitelist of service IDs (empty = all allowed) |
+
+All parameters are optional — only the fields you pass will be updated.
+
+**Example:**
+```
+set_policy({ dailyBudget: "25.00", maxPerPayment: "2.00" })
+```
+
+---
+
+## get_spend_history
+
+List recent payments made by this agent.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `limit` | number | Max payments to return (default: 20) |
+
+**Example output:**
+```json
+{
+  "payments": [
+    {
+      "id": "pay_abc123",
+      "service": "Float Image Generation",
+      "amount": "0.14",
+      "currency": "USDC",
+      "status": "confirmed",
+      "timestamp": "2026-04-22T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## allocate_budget
+
+Move USDC from the owner's treasury into this agent's wallet. Use this if the agent's balance is running low during a long task.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `amount` | string | USDC amount to allocate (e.g. `"10.00"`) |
+
+<Warning>
+This moves real funds. Check `check_balance` first and only allocate what the agent actually needs.
+</Warning>
+
+---
+
+## deploy_agent
+
+Provision a new sub-agent with its own Solana wallet and initial spending policy. Use this when orchestrating multi-agent workflows where each agent should have isolated budget tracking.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | string | Unique ID for the new agent |
+| `dailyBudget` | string | Daily USDC budget for this agent |
+| `maxPerPayment` | string | Maximum USDC per payment |
+
+**Example output:**
+```json
+{
+  "agent": {
+    "agentId": "research-sub-1",
+    "walletAddress": "8mK...pQ2",
+    "createdAt": "2026-04-22T..."
+  },
+  "mcpConfig": {
+    "command": "npx",
+    "args": ["-y", "@usefloat/mcp@latest"],
+    "env": { "FLOAT_AGENT_ID": "research-sub-1" }
+  },
+  "nextSteps": [
+    "Allocate budget: allocate_budget({ agentId: 'research-sub-1', amount: '5.00' })",
+    "Sub-agent can now make payments within its daily budget"
+  ]
+}
+```
+
+---
+
+## kill_agent
+
+Suspend an agent. All payments from this agent will be blocked until it's resumed. The wallet and balance are preserved.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | string | The agent to suspend |
+
+---
+
+## resume_agent
+
+Re-activate a suspended agent.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | string | The agent to resume |
+
+---
+
+## rename_agent
+
+Change an agent's display name. The `agentId` (used for API calls) stays the same — only the human-readable label changes.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `agentId` | string | The agent to rename |
+| `displayName` | string | New display name |
+
+---
+
+## list_models
+
+List all available AI models with pricing. Use this to show users what they can generate through Float without going to an external provider.
+
+**Parameters:** None
+
+**Example output:**
+```json
+{
+  "models": [
+    {
+      "id": "nano-banana-pro",
+      "displayName": "Gemini Pro Image",
+      "provider": "kie",
+      "description": "Photorealistic image generation powered by Gemini Pro Image.",
+      "pricing": {
+        "1k": "$0.14",
+        "2k": "$0.17",
+        "4k": "$0.17"
+      }
+    }
+  ]
+}
+```
